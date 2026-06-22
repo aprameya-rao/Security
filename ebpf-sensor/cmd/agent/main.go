@@ -55,7 +55,7 @@ func main() {
 
 	log.Println("🛡️ eBPF Sensor successfully loaded! Listening for process executions...")
 
-	kafkaBroker := "127.0.0.1:9092" 
+	kafkaBroker := "198.168.1.7:9092" 
 	producer := pipeline.NewKafkaProducer(kafkaBroker, "xdr-telemetry")
 	defer producer.Close()
 

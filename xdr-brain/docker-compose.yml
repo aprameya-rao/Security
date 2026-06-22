@@ -42,3 +42,10 @@ services:
       - "9000:9000" # Native interface
     environment:
       CLICKHOUSE_DB: security_logs
+  tabix:
+    image: spoonest/tabix
+    container_name: tabix
+    ports:
+      - "8888:80"
+    depends_on:
+      - clickhouse

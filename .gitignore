@@ -1,0 +1,21 @@
+# --- Python (Virtual Environments & Cache) ---
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+
+# --- Docker & Infrastructure ---
+# Ignore local environment files and logs
+.env
+*.log
+
+# --- IDE & Editor Files ---
+.vscode/
+.idea/
+.DS_Store
+
+# --- OS Specific ---
+Thumbs.db

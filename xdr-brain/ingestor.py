@@ -30,16 +30,16 @@ def process_message(msg):
     try:
         data = json.loads(msg.value().decode('utf-8'))
         ts_float = data.get('timestamp', 0) / 1000
-	dt_object = datetime.fromtimestamp(ts_float)
+        dt_object = datetime.fromtimestamp(ts_float)
         # Insert raw telemetry into ClickHouse
         # We perform NO filtering here to maintain 100% data fidelity for AI training
         client.insert('security_logs.execve_events', [(
-   	 dt_object, 
-    	data.get('event_name', 'unknown'), 
-    	data.get('pid', 0), 
-    	data.get('uid', 0), 
-    	data.get('command', 'unknown')
-	)])
+            dt_object, 
+            data.get('event_name', 'unknown'), 
+            data.get('pid', 0), 
+            data.get('uid', 0), 
+            data.get('command', 'unknown')
+        )])
         logger.info(f"Ingested: {data.get('command', 'unknown')}")
     except json.JSONDecodeError:
         logger.error("Failed to decode JSON message")

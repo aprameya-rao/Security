@@ -3,6 +3,9 @@ import logging
 from confluent_kafka import Consumer, KafkaException
 import clickhouse_connect
 from datetime import datetime
+from engine import enricher
+
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("Ingestor")
@@ -29,17 +32,26 @@ def process_message(msg):
     """
     try:
         data = json.loads(msg.value().decode('utf-8'))
-        ts_float = data.get('timestamp', 0) / 1000
+        enriched_data = enricher.enrich_event(data)
+    
+        # Prepare datetime
+        ts_float = enriched_data.get('timestamp', 0) / 1000
         dt_object = datetime.fromtimestamp(ts_float)
-        # Insert raw telemetry into ClickHouse
-        # We perform NO filtering here to maintain 100% data fidelity for AI training
+
+        # Insert enriched data
         client.insert('security_logs.execve_events', [(
             dt_object, 
-            data.get('event_name', 'unknown'), 
-            data.get('pid', 0), 
-            data.get('uid', 0), 
-            data.get('command', 'unknown')
+            enriched_data.get('event_name', 'unknown'), 
+            enriched_data.get('pid', 0), 
+            enriched_data.get('uid', 0), 
+            enriched_data.get('command', 'unknown'),
+            # Add new columns to your table schema!
+            enriched_data.get('is_root', False),
+            enriched_data.get('is_suspicious', False),
+            enriched_data.get('is_tmp_execution', False)
         )])
+
+        
         logger.info(f"Ingested: {data.get('command', 'unknown')}")
     except json.JSONDecodeError:
         logger.error("Failed to decode JSON message")

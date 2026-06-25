@@ -111,6 +111,9 @@ def enrich_event(data):
     command = data.get('command', '').lower()
     uid = data.get('uid', 1000)
 
+    # 🛑 1. ADD THIS LINE: What is the Go sensor actually sending?
+    print(f"\n[DEBUG] Raw Command Received: '{command}'")
+
     # Standard Rule-Based Flags
     data['is_root'] = (uid == 0)
     data['is_suspicious'] = any(cmd in command for cmd in SUSPICIOUS_COMMANDS)
@@ -122,6 +125,9 @@ def enrich_event(data):
         # 1. Pull the entire list of known bad domains/signatures from Redis
         known_iocs = ti_cache.smembers("threat_intel:iocs")
         
+        # 🛑 2. ADD THIS LINE: What did we pull from Redis?
+        print(f"[DEBUG] IOCs from Redis: {known_iocs}")
+
         # 2. Loop through them and see if any of them are hiding in the command
         for ioc in known_iocs:
             if ioc in command:

@@ -1,5 +1,11 @@
 # engine/enricher.py
+import redis
 
+try:
+    ti_cache = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+    ti_cache.ping() # Test connection
+except redis.ConnectionError:
+    print("⚠️  Warning: Threat Intel Cache (Redis) is unreachable.")
 # A set of commands that are commonly used in attacks
 SUSPICIOUS_COMMANDS = {
     # Networking
@@ -100,18 +106,22 @@ SUSPICIOUS_COMMANDS = {
 
 def enrich_event(data):
     """
-    Takes raw telemetry, returns enriched data with security flags.
+    Takes raw telemetry, returns enriched data with security flags & Threat Intel.
     """
     command = data.get('command', '').lower()
     uid = data.get('uid', 1000)
 
-    # Flag 1: Privilege
+    # Standard Rule-Based Flags
     data['is_root'] = (uid == 0)
-
-    # Flag 2: Suspicious pattern matching
     data['is_suspicious'] = any(cmd in command for cmd in SUSPICIOUS_COMMANDS)
-
-    # Flag 3: Potential path manipulation (if command mentions /tmp)
     data['is_tmp_execution'] = ("/tmp" in command or "/dev/shm" in command)
+
+    # --- NEW: Redis Threat Intel Lookup ---
+    # We check if the exact command is explicitly flagged in our "Known Bad" Redis set
+    try:
+        is_known_threat = ti_cache.sismember("threat_intel:bad_commands", command)
+        data['is_known_threat'] = bool(is_known_threat)
+    except Exception:
+        data['is_known_threat'] = False
 
     return data

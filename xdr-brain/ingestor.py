@@ -48,7 +48,8 @@ def process_message(msg):
             # Add new columns to your table schema!
             enriched_data.get('is_root', False),
             enriched_data.get('is_suspicious', False),
-            enriched_data.get('is_tmp_execution', False)
+            enriched_data.get('is_tmp_execution', False),
+            enriched_data.get('is_known_threat', False)
         )])
 
         

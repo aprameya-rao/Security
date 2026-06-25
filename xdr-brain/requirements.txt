@@ -1,2 +1,7 @@
-confluent-kafka
-clickhouse-connect
+certifi==2026.6.17
+clickhouse-connect==1.3.0
+confluent-kafka==2.14.2
+lz4==4.4.5
+redis==8.0.1
+urllib3==2.7.0
+zstandard==0.25.0

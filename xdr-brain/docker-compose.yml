@@ -43,3 +43,8 @@ services:
     environment:
       CLICKHOUSE_DB: security_logs
       CLICKHOUSE_PASSWORD: admin
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"

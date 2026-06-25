@@ -116,12 +116,20 @@ def enrich_event(data):
     data['is_suspicious'] = any(cmd in command for cmd in SUSPICIOUS_COMMANDS)
     data['is_tmp_execution'] = ("/tmp" in command or "/dev/shm" in command)
 
-    # --- NEW: Redis Threat Intel Lookup ---
-    # We check if the exact command is explicitly flagged in our "Known Bad" Redis set
+    # --- UPDATED: Substring Threat Intel Lookup ---
+    data['is_known_threat'] = False  # Default to False
     try:
-        is_known_threat = ti_cache.sismember("threat_intel:bad_commands", command)
-        data['is_known_threat'] = bool(is_known_threat)
-    except Exception:
-        data['is_known_threat'] = False
+        # 1. Pull the entire list of known bad domains/signatures from Redis
+        known_iocs = ti_cache.smembers("threat_intel:iocs")
+        
+        # 2. Loop through them and see if any of them are hiding in the command
+        for ioc in known_iocs:
+            if ioc in command:
+                data['is_known_threat'] = True
+                print(f"🚨 THREAT INTEL MATCH: '{ioc}' found in command: {command}")
+                break  # Stop checking once we confirm it's bad
+                
+    except Exception as e:
+        print(f"Redis Error: {e}")
 
     return data

@@ -1,6 +1,6 @@
 import json
 import logging
-from confluent_kafka import Consumer, KafkaException
+from confluent_kafka import Consumer,Producer, KafkaException
 import clickhouse_connect
 from datetime import datetime
 from engine import enricher
@@ -25,6 +25,11 @@ consumer = Consumer({
     'auto.offset.reset': 'earliest',
     'enable.auto.commit': True
 })
+
+producer = Producer({
+    'bootstrap.servers': 'localhost:9092'
+})
+
 
 def process_message(msg):
     """
@@ -51,7 +56,17 @@ def process_message(msg):
             enriched_data.get('is_tmp_execution', False),
             enriched_data.get('is_known_threat', False)
         )])
-
+        
+        if enriched_data.get('is_known_threat'):
+            kill_payload = {
+                "pid": int(enriched_data.get('pid', 0)),
+                "command": enriched_data.get('command', 'unknown'),
+                "is_known_threat": True
+            }
+            # Send the order using confluent_kafka's .produce() method
+            producer.produce('kill_commands', value=json.dumps(kill_payload).encode('utf-8'))
+            producer.flush() # Force it to send immediately
+            print(f"🔫 ASSASSINATION ORDER SENT FOR PID: {kill_payload['pid']} ({kill_payload['command']})")
         
         logger.info(f"Ingested: {data.get('command', 'unknown')}")
     except json.JSONDecodeError:

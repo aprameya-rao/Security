@@ -24,7 +24,7 @@ model.eval() # Set to evaluation mode (no more training)
 
 # 3. Connect to the Live Kafka Stream
 consumer = KafkaConsumer(
-    'ebpf-events', # Change this if your Kafka topic is named differently!
+    'edr-telemetry', # Change this if your Kafka topic is named differently!
     bootstrap_servers=['localhost:9092'],
     auto_offset_reset='latest',
     value_deserializer=lambda x: json.loads(x.decode('utf-8'))

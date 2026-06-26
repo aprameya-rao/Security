@@ -24,7 +24,7 @@ class FeatureExtractor:
         print(f"[*] Fetching top {limit} baseline logs from ClickHouse...")
         
         # THE FINAL SQL FIX: Target security_logs, rename command to comm, and pass 'none' for args
-        query = f"SELECT uid, command AS comm, 'none' AS args FROM security_logs.execve_events LIMIT {limit}"
+        query = f"SELECT uid, command AS comm, 'none' AS args FROM security_logs.execve_events"
         data = self.client.execute(query)
         
         df = pd.DataFrame(data, columns=['uid', 'comm', 'args'])

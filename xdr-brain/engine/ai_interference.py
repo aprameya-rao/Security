@@ -65,7 +65,7 @@ for message in consumer:
         loss = torch.nn.functional.mse_loss(reconstructed, tensor_data).item()
 
     if loss > ANOMALY_THRESHOLD:
-    print(f"[🚨 ZERO-DAY DETECTED] Killing PID: {event.get('pid')}...")
+        print(f"[🚨 ZERO-DAY DETECTED] Killing PID: {event.get('pid')}...")
 
         # This sends the order to the Rust Responder!
         producer.send('kill_commands', {

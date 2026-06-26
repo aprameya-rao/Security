@@ -1,0 +1,13 @@
+/home/admin/projects/Security/local-responder/target/debug/build/rdkafka-sys-ed12d40db1ee5980/out/lib/cmake/RdKafka/RdKafkaConfig.cmake
+/home/admin/projects/Security/local-responder/target/debug/build/rdkafka-sys-ed12d40db1ee5980/out/lib/cmake/RdKafka/RdKafkaConfigVersion.cmake
+/home/admin/projects/Security/local-responder/target/debug/build/rdkafka-sys-ed12d40db1ee5980/out/lib/cmake/RdKafka/FindLZ4.cmake
+/home/admin/projects/Security/local-responder/target/debug/build/rdkafka-sys-ed12d40db1ee5980/out/lib/cmake/RdKafka/RdKafkaTargets.cmake
+/home/admin/projects/Security/local-responder/target/debug/build/rdkafka-sys-ed12d40db1ee5980/out/lib/cmake/RdKafka/RdKafkaTargets-debug.cmake
+/home/admin/projects/Security/local-responder/target/debug/build/rdkafka-sys-ed12d40db1ee5980/out/share/licenses/librdkafka/LICENSES.txt
+/home/admin/projects/Security/local-responder/target/debug/build/rdkafka-sys-ed12d40db1ee5980/out/lib/pkgconfig/rdkafka-static.pc
+/home/admin/projects/Security/local-responder/target/debug/build/rdkafka-sys-ed12d40db1ee5980/out/lib/librdkafka.a
+/home/admin/projects/Security/local-responder/target/debug/build/rdkafka-sys-ed12d40db1ee5980/out/include/librdkafka/rdkafka.h
+/home/admin/projects/Security/local-responder/target/debug/build/rdkafka-sys-ed12d40db1ee5980/out/include/librdkafka/rdkafka_mock.h
+/home/admin/projects/Security/local-responder/target/debug/build/rdkafka-sys-ed12d40db1ee5980/out/lib/pkgconfig/rdkafka++-static.pc
+/home/admin/projects/Security/local-responder/target/debug/build/rdkafka-sys-ed12d40db1ee5980/out/lib/librdkafka++.a
+/home/admin/projects/Security/local-responder/target/debug/build/rdkafka-sys-ed12d40db1ee5980/out/include/librdkafka/rdkafkacpp.h

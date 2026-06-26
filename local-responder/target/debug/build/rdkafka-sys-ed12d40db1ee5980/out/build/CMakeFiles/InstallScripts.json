@@ -1,0 +1,9 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/admin/projects/Security/local-responder/target/debug/build/rdkafka-sys-ed12d40db1ee5980/out/build/cmake_install.cmake",
+		"/home/admin/projects/Security/local-responder/target/debug/build/rdkafka-sys-ed12d40db1ee5980/out/build/src/cmake_install.cmake",
+		"/home/admin/projects/Security/local-responder/target/debug/build/rdkafka-sys-ed12d40db1ee5980/out/build/src-cpp/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

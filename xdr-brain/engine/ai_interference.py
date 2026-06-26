@@ -64,14 +64,24 @@ for message in consumer:
         reconstructed = model(tensor_data)
         loss = torch.nn.functional.mse_loss(reconstructed, tensor_data).item()
 
-    if loss > ANOMALY_THRESHOLD:
-        print(f"[🚨 ZERO-DAY DETECTED] Killing PID: {event.get('pid')}...")
+    uid = event.get('uid', 1000)
+    pid = int(event.get('pid', 0)) 
+    raw_cmd = event.get('command', 'unknown').strip().replace('\x00', '')
+    args_str = 'none'
 
-        # This sends the order to the Rust Responder!
-        producer.send('kill_commands', {
-            'pid': event.get('pid'),
-            'command': raw_cmd,
-            'is_known_threat': True
-        })
+    if loss > ANOMALY_THRESHOLD:
+        print(f"[🚨 ZERO-DAY DETECTED] Score: {loss:.2f} | Killing PID: {pid} | Command: {raw_cmd}")
+        
+        # 2. Format exact JSON for Rust
+        kill_payload = {
+            "pid": pid,
+            "command": raw_cmd,
+            "is_known_threat": True
+        }
+        
+        # 3. Fire the order and FLUSH the buffer instantly
+        producer.send('kill_commands', kill_payload)
+        producer.flush() 
+        
     else:
         print(f"[✅ NORMAL] Score: {loss:.2f} | Command: {raw_cmd}")

@@ -20,7 +20,7 @@ class FeatureExtractor:
         self.args_vectorizer = TfidfVectorizer(max_features=50)
         self.scaler = StandardScaler()
 
-    def fetch_training_data(self, limit=10000):
+    def fetch_training_data(self, limit=None):
         print(f"[*] Fetching top {limit} baseline logs from ClickHouse...")
         
         # THE FINAL SQL FIX: Target security_logs, rename command to comm, and pass 'none' for args

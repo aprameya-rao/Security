@@ -41,7 +41,7 @@ class ZeroDayAutoencoder(nn.Module):
 def train_model(epochs=50, batch_size=64):
     # 1. Fetch and Preprocess Data
     extractor = FeatureExtractor()
-    df = extractor.fetch_training_data(limit=10000)
+    df = extractor.fetch_training_data(limit=None)
     
     # Get the Tensor and shoot it to the GPU (or CPU)
     data_tensor = extractor.preprocess_and_tensorize(df, is_training=True)

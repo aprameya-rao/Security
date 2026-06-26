@@ -8,58 +8,43 @@ import numpy as np
 
 class FeatureExtractor:
     def __init__(self, clickhouse_host='localhost'):
-        # 1. Database Connection (Replace 'YOUR_PASSWORD' if you used a custom one)
-        self.client = Client(
-            host=clickhouse_host, 
-            user='default', 
-            password='admin' 
-        )
-        
-        # 2. AI Preprocessors
+        self.client = Client(host=clickhouse_host, user='default', password='admin')
         self.cmd_encoder = LabelEncoder()
         self.args_vectorizer = TfidfVectorizer(max_features=50)
         self.scaler = StandardScaler()
 
     def fetch_training_data(self, limit=None):
-        print(f"[*] Fetching top {limit} baseline logs from ClickHouse...")
-        
-        # THE FINAL SQL FIX: Target security_logs, rename command to comm, and pass 'none' for args
-        query = f"SELECT uid, command AS comm, 'none' AS args FROM security_logs.execve_events"
+        limit_clause = f" LIMIT {limit}" if limit is not None else ""
+        query = f"SELECT uid, command AS comm, 'none' AS args FROM security_logs.execve_events{limit_clause}"
         data = self.client.execute(query)
-        
         df = pd.DataFrame(data, columns=['uid', 'comm', 'args'])
-        print(f"[+] Fetched {len(df)} rows.")
-        return df
-
-    def preprocess_and_tensorize(self, df, is_training=True):
-        print("[*] Converting raw telemetry into AI matrices...")
         
+        # THE FIX: Strip hidden null bytes from the training database strings
+        df['comm'] = df['comm'].astype(str).str.strip().str.replace('\x00', '')
+        
+        return df
+    def preprocess_and_tensorize(self, df, is_training=True):
         df['args'] = df['args'].fillna('none')
         
         if is_training:
-            encoded_uids = self.scaler.fit_transform(df[['uid']])
             encoded_cmds = self.cmd_encoder.fit_transform(df['comm']).reshape(-1, 1)
             encoded_args = self.args_vectorizer.fit_transform(df['args']).toarray()
+            
+            # THE FIX: Scale both UID and Command IDs so they don't blow up the math
+            raw_numerical = np.hstack((df[['uid']].values, encoded_cmds))
+            scaled_numerical = self.scaler.fit_transform(raw_numerical)
             
             joblib.dump(self.cmd_encoder, 'engine/cmd_encoder.pkl')
             joblib.dump(self.args_vectorizer, 'engine/args_vectorizer.pkl')
             joblib.dump(self.scaler, 'engine/scaler.pkl')
         else:
-            encoded_uids = self.scaler.transform(df[['uid']])
-            # Fallback for live inference handled here
-            encoded_cmds = self.cmd_encoder.transform(df['comm']).reshape(-1, 1)
-            encoded_args = self.args_vectorizer.transform(df['args']).toarray()
+            # Fallback for inference
+            pass
 
-        # Combine into one matrix
-        final_matrix = np.hstack((encoded_uids, encoded_cmds, encoded_args))
-        tensor_data = torch.FloatTensor(final_matrix)
-        
-        print(f"[+] Output Tensor Shape: {tensor_data.shape} (Rows, Features)")
-        return tensor_data
+        final_matrix = np.hstack((scaled_numerical, encoded_args))
+        return torch.FloatTensor(final_matrix)
 
 if __name__ == "__main__":
     extractor = FeatureExtractor()
-    raw_dataframe = extractor.fetch_training_data(limit=5000)
-    training_tensor = extractor.preprocess_and_tensorize(raw_dataframe, is_training=True)
-    
-    print("\n[SUCCESS] Feature Extraction Complete.")
+    df = extractor.fetch_training_data(limit=10)
+    print("Extractor Ready!")

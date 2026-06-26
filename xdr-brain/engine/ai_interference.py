@@ -3,7 +3,7 @@ import torch
 import joblib
 import numpy as np
 import warnings
-from kafka import KafkaConsumer
+from kafka import KafkaConsumer,KafkaProducer
 from autoencoder import ZeroDayAutoencoder, device
 
 warnings.filterwarnings('ignore')
@@ -22,6 +22,11 @@ consumer = KafkaConsumer(
     bootstrap_servers=['localhost:9092'],
     group_id='ai-brain-group',
     auto_offset_reset='latest'
+)
+
+producer = KafkaProducer(
+    bootstrap_servers=['localhost:9092'],
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
 )
 
 # With the math fixed, normal commands will score 0.1 to 1.0. 
@@ -60,6 +65,13 @@ for message in consumer:
         loss = torch.nn.functional.mse_loss(reconstructed, tensor_data).item()
 
     if loss > ANOMALY_THRESHOLD:
-        print(f"[🚨 ZERO-DAY DETECTED] Score: {loss:.2f} | User: {uid} | Command: {raw_cmd}")
+    print(f"[🚨 ZERO-DAY DETECTED] Killing PID: {event.get('pid')}...")
+
+        # This sends the order to the Rust Responder!
+        producer.send('kill_commands', {
+            'pid': event.get('pid'),
+            'command': raw_cmd,
+            'is_known_threat': True
+        })
     else:
         print(f"[✅ NORMAL] Score: {loss:.2f} | Command: {raw_cmd}")

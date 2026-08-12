@@ -43,8 +43,19 @@ services:
     environment:
       CLICKHOUSE_DB: security_logs
       CLICKHOUSE_PASSWORD: admin
+    volumes:
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+      - clickhouse-data:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--password", "admin", "-q", "SELECT 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
   redis:
     image: redis:alpine
     container_name: redis
     ports:
       - "6379:6379"
+
+volumes:
+  clickhouse-data:

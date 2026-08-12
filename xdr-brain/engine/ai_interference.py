@@ -79,7 +79,8 @@ for message in consumer:
         kill_payload = {
             "pid": pid,
             "command": raw_cmd,
-            "is_known_threat": True
+            "is_known_threat": True,
+            "source": "zero_day"
         }
         
         # 3. Fire the order and FLUSH the buffer instantly

@@ -57,5 +57,40 @@ services:
     ports:
       - "6379:6379"
 
+  ioc-feed:
+    image: python:3.11-slim
+    container_name: ioc-feed
+    depends_on:
+      - redis
+    restart: unless-stopped
+    environment:
+      REDIS_HOST: redis
+      IOC_REFRESH_HOURS: "${IOC_REFRESH_HOURS:-1}"
+      IOC_FEEDS: "${IOC_FEEDS:-local,urlhaus,feodo,threatfox}"
+      THREATFOX_API_KEY: "${THREATFOX_API_KEY:-}"
+    working_dir: /app
+    volumes:
+      - ./ioc_feed.py:/app/ioc_feed.py:ro
+      - ./iocs:/app/iocs:ro
+    command: sh -c "pip install --no-cache-dir redis && python ioc_feed.py --refresh"
+
+  ioc-learner:
+    image: python:3.11-slim
+    container_name: ioc-learner
+    depends_on:
+      - kafka
+      - redis
+    restart: unless-stopped
+    environment:
+      REDIS_HOST: redis
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      IOC_ACK_TOPIC: kill_confirmations
+      REINFECT_WINDOW_S: "${REINFECT_WINDOW_S:-300}"
+      REINFECT_KILLS: "${REINFECT_KILLS:-2}"
+    working_dir: /app
+    volumes:
+      - ./ioc_learner.py:/app/ioc_learner.py:ro
+    command: sh -c "pip install --no-cache-dir redis confluent-kafka && python ioc_learner.py"
+
 volumes:
   clickhouse-data:

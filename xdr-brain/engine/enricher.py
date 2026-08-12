@@ -122,11 +122,12 @@ def enrich_event(data):
     data['is_suspicious'] = any(cmd in command for cmd in SUSPICIOUS_COMMANDS)
     data['is_tmp_execution'] = ("/tmp" in command or "/dev/shm" in command)
 
-    # --- UPDATED: Substring Threat Intel Lookup ---
+    # --- Substring Threat Intel Lookup (fed IOCs + learner feedback) ---
     data['is_known_threat'] = False  # Default to False
     try:
-        # 1. Pull the entire list of known bad domains/signatures from Redis
-        known_iocs = ti_cache.smembers("threat_intel:iocs")
+        # 1. Pull the entire list of known bad domains/signatures from Redis,
+        #    plus confirmed-bad commands learned through the kill feedback loop.
+        known_iocs = ti_cache.smembers("threat_intel:iocs") | ti_cache.smembers("threat_intel:learned")
         
         # 🛑 2. ADD THIS LINE: What did we pull from Redis?
         print(f"[DEBUG] IOCs from Redis: {known_iocs}")

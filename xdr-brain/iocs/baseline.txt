@@ -1,0 +1,65 @@
+# Curated baseline of known-bad tool/process-name IOCs.
+# engine/enricher.py substring-matches these against the telemetry `command`
+# field (16-byte truncated comm today). Keep tokens distinctive to avoid
+# false-positive kills. This set always loads, even with no internet.
+mimikatz
+mimikatz.exe
+procdump
+procdump64
+fgdump
+gsecdump
+wmiexec
+smbexec
+atexec
+dcomexec
+psexec
+psexec64
+winexesvc
+impacket-secretsdump
+msfvenom
+msfconsole
+metasploit
+meterpreter
+meterpreter.exe
+cobaltstrike
+cobalt
+xorddos
+sliver
+havoc
+pwncat
+empire
+powershell-empire
+xmrig
+xmrig-mo
+xmrig-proxy
+xmr-stak
+minergate
+cpuminer
+claymore
+ethminer
+nanorat
+darkcomet
+remcos
+njrat
+quasar
+gh0st
+keylogger
+keylogger.exe
+wannacry
+lockbit
+ryuk
+revil
+blackcat
+clop
+ld.so.preload
+nc.exe
+shell.exe
+cmd.aspx
+webshell
+beacon.exe
+payload.exe
+revshell
+# Future-proof multi-token indicators (become matchable once argv is captured in Phase 2)
+curl | bash
+wget | bash -c
+bash -i

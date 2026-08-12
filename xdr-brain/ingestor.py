@@ -64,7 +64,8 @@ def process_message(msg):
             kill_payload = {
                 "pid": int(enriched_data.get('pid', 0)),
                 "command": enriched_data.get('command', 'unknown'),
-                "is_known_threat": True
+                "is_known_threat": True,
+                "source": "known_ioc"
             }
             # Send the order using confluent_kafka's .produce() method
             producer.produce('kill_commands', value=json.dumps(kill_payload).encode('utf-8'))

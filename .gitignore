@@ -18,5 +18,14 @@ __pycache__/
 .idea/
 .DS_Store
 
+# --- Build Artifacts (built on the VMs, not pushed) ---
+# Compiled eBPF sensor binary
+ebpf-sensor/sensor
+# Rust cargo build artifacts
+local-responder/target/
+
 # --- OS Specific ---
 Thumbs.db
+
+# --- Agent Context (local-only) ---
+AGENTS.md

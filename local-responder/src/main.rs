@@ -26,7 +26,7 @@ fn load_dotenv() {
             let key = line[..idx].trim();
             let value = line[idx + 1..].trim().trim_matches(|c| c == '"' || c == '\'');
             if env::var_os(key).is_none() {
-                env::set_var(key, value);
+                unsafe { env::set_var(key, value); }
             }
         }
     }

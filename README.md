@@ -212,21 +212,3 @@ Feedback-loop test: make a zero-day command kill itself twice (re-execute the sa
 kill) and confirm that without any ops action the token lands in `threat_intel:learned`; a once-only novel command
 instead appears in `pending_approval` for `ioc_approve.py`. Manual override survival: `SADD threat_intel:manual foo`
 stays present across feed refreshes.
-
-## Roadmap status
-
-> Plain-language walkthrough of the finished project and the phase-by-phase plan:
-> see [PLAN.md](PLAN.md).
-
-| Area | Status |
-|------|--------|
-| Pipeline: Kafka + ClickHouse + Redis stack | Done |
-| eBPF sensor (execve -> Kafka) | Done |
-| Threat-intel enrichment + kill responder | Done (detection via IOC cross-check) |
-| Dataset-driven IOC/cross-check feeds | Done (local + URLhaus/Feodo/ThreatFox; hourly) |
-| Adaptive IOC feedback (learned set) | Done (triage + re-infection confirmation) |
-| Autoencoder-based anomaly scoring | Partial (committed model; re-train on fresh data) |
-| NIDS (network traffic models) | Planned |
-| Reinforcement-learning response agent (PPO) | Planned |
-| XAI explainability (SHAP) | Planned |
-| Web dashboard (Next.js/D3) | Planned |

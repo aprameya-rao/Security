@@ -99,6 +99,8 @@ The kill loop matches telemetry against Redis `threat_intel:iocs`. That set is p
 - **`ioc-feed`**: fills `threat_intel:iocs` from the local baseline (`iocs/baseline.txt`, always), plus URLhaus, Feodo
   and ThreatFox (need internet egress on VM2; failures degrade to local-only, non-fatal). Refreshes on schedule
   (`IOC_REFRESH_HOURS`, default 1h). Manual refresh: `docker compose run --rm --no-deps ioc-feed python ioc_feed.py --once`.
+  Payload that is `local,urlhaus,feodo,threatfox`; the Feodo source is winding down (returns a handful of IPs) and
+  ThreatFox now requires signing up for an API key (`THREATFOX_API_KEY`) — without it the feed skips ThreatFox quietly.
 - **`ioc-learner`**: listens to the responder's `kill_confirmations` acks and grows `threat_intel:learned`
   (confirmed-bad commands). Confirmation is never based on kill success alone — only on **re-infection evidence**
   (same zero-day command killed again within `REINFECT_WINDOW_S`, default 300s / `REINFECT_KILLS`, default 2) or on

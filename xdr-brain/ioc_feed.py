@@ -107,6 +107,9 @@ def provider_feodo():
 
 
 def provider_threatfox():
+    if not THREATFOX_API_KEY:
+        print("  [WARN] no THREATFOX_API_KEY set; skipping threatfox feed (needs a key now).")
+        return set()
     payload = {'query': 'get_iocs', 'days': 7}
     if THREATFOX_API_KEY:
         payload['api_key'] = THREATFOX_API_KEY

@@ -40,24 +40,10 @@ services:
     depends_on:
       - kafka
     restart: "no"
-    entrypoint: ["/bin/bash", "-c"]
-    command: >
-      for i in $(seq 1 60); do
-        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists \
-          --topic xdr-telemetry --partitions 1 --replication-factor 1 >/dev/null 2>&1;
-        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists \
-          --topic kill_commands --partitions 1 --replication-factor 1 >/dev/null 2>&1;
-        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists \
-          --topic kill_confirmations --partitions 1 --replication-factor 1 >/dev/null 2>&1;
-        existing=$(kafka-topics --bootstrap-server kafka:29092 --list 2>/dev/null |
-                   grep -xE 'xdr-telemetry|kill_commands|kill_confirmations' | wc -l);
-        if [ "$$existing" -eq 3 ]; then
-          echo "topics OK: $(kafka-topics --bootstrap-server kafka:29092 --list)";
-          exit 0;
-        fi;
-        echo "waiting for kafka ($$existing/3 topics)..."; sleep 2;
-      done;
-      echo "FAILED to create topics on kafka"; exit 1
+    entrypoint: ["/bin/bash"]
+    command: ["/scripts/init-topics.sh"]
+    volumes:
+      - ./scripts:/scripts:ro
   clickhouse:
     image: clickhouse/clickhouse-server:latest
     container_name: clickhouse

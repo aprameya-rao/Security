@@ -1,8 +1,11 @@
 # engine/enricher.py
+import os
 import redis
 
+REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+
 try:
-    ti_cache = redis.Redis(host='192.168.1.7', port=6379, db=0, decode_responses=True)
+    ti_cache = redis.Redis(host=REDIS_HOST, port=6379, db=0, decode_responses=True)
     ti_cache.ping() # Test connection
 except redis.ConnectionError:
     print("⚠️  Warning: Threat Intel Cache (Redis) is unreachable.")

@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 from confluent_kafka import Consumer,Producer, KafkaException
 import clickhouse_connect
 from datetime import datetime
@@ -12,22 +13,24 @@ logger = logging.getLogger("Ingestor")
 
 # Storage Client
 client = clickhouse_connect.get_client(
-    host='localhost', 
-    port=8123, 
+    host=os.getenv('CLICKHOUSE_HOST', 'localhost'), 
+    port=int(os.getenv('CLICKHOUSE_PORT', 8123)), 
     username='default', 
-    password='admin'  # <--- ADD THIS
+    password=os.getenv('CLICKHOUSE_PASSWORD', 'admin')
 )
+
+KAFKA_BOOTSTRAP = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
 
 # Consumer Configuration
 consumer = Consumer({
-    'bootstrap.servers': 'localhost:9092',
+    'bootstrap.servers': KAFKA_BOOTSTRAP,
     'group.id': 'pipeline-worker',
     'auto.offset.reset': 'earliest',
     'enable.auto.commit': True
 })
 
 producer = Producer({
-    'bootstrap.servers': 'localhost:9092'
+    'bootstrap.servers': KAFKA_BOOTSTRAP
 })
 
 

@@ -10,6 +10,7 @@ __pycache__/
 # --- Docker & Infrastructure ---
 # Ignore local environment files and logs
 .env
+**/.env
 *.log
 
 # --- IDE & Editor Files ---

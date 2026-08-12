@@ -1,4 +1,5 @@
 import json
+import os
 import torch
 import joblib
 import numpy as np
@@ -8,6 +9,8 @@ from autoencoder import ZeroDayAutoencoder, device
 
 warnings.filterwarnings('ignore')
 print("[*] Waking up the AI Brain...")
+
+KAFKA_BOOTSTRAP = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'localhost:9092')
 
 cmd_encoder = joblib.load('engine/cmd_encoder.pkl')
 args_vectorizer = joblib.load('engine/args_vectorizer.pkl')
@@ -19,13 +22,13 @@ model.eval()
 
 consumer = KafkaConsumer(
     'xdr-telemetry',
-    bootstrap_servers=['localhost:9092'],
+    bootstrap_servers=[KAFKA_BOOTSTRAP],
     group_id='ai-brain-group',
     auto_offset_reset='latest'
 )
 
 producer = KafkaProducer(
-    bootstrap_servers=['localhost:9092'],
+    bootstrap_servers=[KAFKA_BOOTSTRAP],
     value_serializer=lambda v: json.dumps(v).encode('utf-8')
 )
 

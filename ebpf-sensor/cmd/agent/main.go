@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"ebpf-sensor/pkg/config"
 	"ebpf-sensor/pkg/pipeline"
 
 	"github.com/cilium/ebpf/link"
@@ -53,10 +54,14 @@ func main() {
 	}
 	defer rd.Close()
 
-	log.Println("🛡️ eBPF Sensor successfully loaded! Listening for process executions...")
+	config.Load()
+	kafkaBroker := config.Get("KAFKA_BROKER", "192.168.1.16:9092")
+	kafkaTopic := config.Get("KAFKA_TOPIC", "xdr-telemetry")
 
-	kafkaBroker := "192.168.1.20:9092" 
-	producer := pipeline.NewKafkaProducer(kafkaBroker, "xdr-telemetry")
+	log.Printf("🛡️ eBPF Sensor successfully loaded! Listening for process executions...")
+	log.Printf("📡 Publishing telemetry to Kafka broker: %s | topic: %s", kafkaBroker, kafkaTopic)
+
+	producer := pipeline.NewKafkaProducer(kafkaBroker, kafkaTopic)
 	defer producer.Close()
 
 	// 5. The Extraction Loop
@@ -93,7 +98,6 @@ func main() {
 
 			// We will keep the print statement just for lab visibility
 			log.Printf("Shipped -> %s", comm)
-
 
 			log.Printf("[🚨 EXEC] PID: %d | UID: %d | Command: %s", event.Pid, event.Uid, comm)
 		}

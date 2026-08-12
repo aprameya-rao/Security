@@ -203,6 +203,7 @@ def run_loop():
 if __name__ == '__main__':
     ap = argparse.ArgumentParser(description='Dataset-driven IOC feed for the XDR brain.')
     ap.add_argument('--once', action='store_true', help='Run a single refresh and exit')
+    ap.add_argument('--refresh', action='store_true', help='Run the periodic refresh loop (default)')
     args = ap.parse_args()
     if args.once:
         run_once()

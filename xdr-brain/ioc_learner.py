@@ -112,7 +112,8 @@ def main():
             if msg is None:
                 continue
             if msg.error():
-                if msg.error().code() == -191:  # _PARTITION_EOF
+                # Transient: EOF (-191) and topic-not-created-yet (3) — wait, don't die.
+                if msg.error().code() in (-191, 3):
                     continue
                 raise KafkaException(msg.error())
             handle_ack(msg)

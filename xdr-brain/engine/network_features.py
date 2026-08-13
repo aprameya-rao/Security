@@ -82,6 +82,8 @@ def _timestamp(event: dict[str, Any]) -> float:
     raw_timestamp = event.get("timestamp")
     if raw_timestamp is None:
         return time.time()
+    if hasattr(raw_timestamp, "timestamp"):
+        return float(raw_timestamp.timestamp())
     value = float(raw_timestamp)
     return value / 1000.0 if value > 10_000_000_000 else value
 

@@ -65,7 +65,12 @@ def score_event(model: NIDSAutoencoder, scaler: object, event: dict, state: Conn
     with torch.no_grad():
         reconstructed = model(source)
         score = torch.mean((reconstructed - source) ** 2, dim=1).item()
-    return {**event, "score": float(score), "features": extracted["feature_map"]}
+    return {
+        **event,
+        "score": float(score),
+        "features": extracted["feature_map"],
+        "context": extracted["context"],
+    }
 
 
 def insert_alert(client: object, alert: dict, threshold: float, anomaly: bool, model_version: str) -> None:

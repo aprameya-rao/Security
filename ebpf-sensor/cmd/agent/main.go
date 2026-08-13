@@ -6,7 +6,9 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"log"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -22,11 +24,20 @@ import (
 // 1. The Payload Blueprint (Go Version)
 // This MUST perfectly match the memory layout of the C struct in sensor.c
 type Event struct {
-	Type uint32
-	Pid  uint32
-	Uid  uint32
-	Comm [16]byte
+	Type               uint32
+	Pid                uint32
+	Uid                uint32
+	Comm               [16]byte
+	Args               [256]byte
+	Family             uint16
+	DestinationPort    uint16
+	DestinationAddress [16]byte
 }
+
+const (
+	eventTypeExec    = 1
+	eventTypeConnect = 2
+)
 
 func main() {
 	// Listen for standard termination signals (like Ctrl+C) to exit cleanly
@@ -46,6 +57,12 @@ func main() {
 		log.Fatalf("Failed to attach tracepoint: %v", err)
 	}
 	defer kp.Close()
+
+	connectLink, err := link.Tracepoint("syscalls", "sys_enter_connect", objs.TracepointSyscallsSysEnterConnect, nil)
+	if err != nil {
+		log.Fatalf("Failed to attach connect tracepoint: %v", err)
+	}
+	defer connectLink.Close()
 
 	// 4. Open the Ring Buffer Reader
 	rd, err := ringbuf.NewReader(objs.Events)
@@ -85,25 +102,43 @@ func main() {
 			}
 
 			comm := string(bytes.TrimRight(event.Comm[:], "\x00"))
-
-			telemetry := pipeline.Telemetry{
-				EventName: "execve",
-				PID:       event.Pid,
-				UID:       event.Uid,
-				Command:   comm,
-				Timestamp: time.Now().UnixMilli(),
+			telemetry := pipeline.Telemetry{PID: event.Pid, UID: event.Uid, Command: comm, Timestamp: time.Now().UnixMilli()}
+			switch event.Type {
+			case eventTypeExec:
+				telemetry.EventName = "execve"
+				telemetry.Args = string(bytes.TrimRight(event.Args[:], "\x00"))
+			case eventTypeConnect:
+				telemetry.EventName = "connect"
+				telemetry.DestinationIP = formatAddress(event.Family, event.DestinationAddress)
+				telemetry.DestinationPort = event.DestinationPort
+				telemetry.Protocol = "tcp"
+			default:
+				log.Printf("Ignoring unknown eBPF event type: %d", event.Type)
+				continue
 			}
 
 			producer.Publish(telemetry)
 
 			// We will keep the print statement just for lab visibility
-			log.Printf("Shipped -> %s", comm)
-
-			log.Printf("[🚨 EXEC] PID: %d | UID: %d | Command: %s", event.Pid, event.Uid, comm)
+			if telemetry.EventName == "connect" {
+				log.Printf("[🌐 CONNECT] PID: %d | UID: %d | Command: %s | Destination: %s:%d", event.Pid, event.Uid, comm, telemetry.DestinationIP, telemetry.DestinationPort)
+			} else {
+				log.Printf("[🚨 EXEC] PID: %d | UID: %d | Command: %s | Args: %s", event.Pid, event.Uid, comm, telemetry.Args)
+			}
 		}
 	}()
 
 	// Keep the main function alive until we press Ctrl+C
 	<-stopper
 	log.Println("Received stop signal, detaching sensor...")
+}
+
+func formatAddress(family uint16, address [16]byte) string {
+	if family == 2 {
+		return net.IPv4(address[0], address[1], address[2], address[3]).String()
+	}
+	if family == 10 {
+		return net.IP(address[:]).String()
+	}
+	return fmt.Sprintf("unknown-family-%d", family)
 }

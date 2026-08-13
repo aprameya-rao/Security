@@ -113,6 +113,7 @@ def enrich_event(data):
     """
     command = data.get('command', '').lower()
     uid = data.get('uid', 1000)
+    destination_ip = data.get('destination_ip', '').lower()
 
     # Standard Rule-Based Flags
     data['is_root'] = (uid == 0)
@@ -126,11 +127,11 @@ def enrich_event(data):
         #    plus confirmed-bad commands learned through the kill feedback loop.
         known_iocs = ti_cache.smembers("threat_intel:iocs") | ti_cache.smembers("threat_intel:learned")
 
-        # 2. Loop through them and see if any of them are hiding in the command
+        # 2. Match command text and network destinations against the same IOC sets.
         for ioc in known_iocs:
-            if ioc in command:
+            if ioc in command or (destination_ip and ioc == destination_ip):
                 data['is_known_threat'] = True
-                print(f"🚨 THREAT INTEL MATCH: '{ioc}' found in command: {command}")
+                print(f"🚨 THREAT INTEL MATCH: '{ioc}' matched event")
                 break  # Stop checking once we confirm it's bad
                 
     except Exception as e:

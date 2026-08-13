@@ -6,7 +6,7 @@ A distributed XDR (Extended Detection and Response) platform. An eBPF sensor on 
 
 ```
 [ VM1 - Target/Endpoint 192.168.1.15 ]
-    ├── eBPF Host Sensor (Go)  ──> execve events  ──> Kafka (VM2)
+    ├── eBPF Host Sensor (Go)  ──> execve/connect events  ──> Kafka (VM2)
     └── Local Responder (Rust) ──< kill_commands (Kafka) <─ kills PIDs
                                   │
 [ VM2 - Brain 192.168.1.16 ]
@@ -17,7 +17,7 @@ A distributed XDR (Extended Detection and Response) platform. An eBPF sensor on 
     └── AI Brain (Python)   autoencoder anomaly scoring -> fires kill orders
 ```
 
-Data flow: `execve` tracepoint -> ring buffer -> Kafka `xdr-telemetry` -> ingestor + AI brain -> ClickHouse (`security_logs.execve_events`) and/or `kill_commands` -> Rust responder -> `kill -9`.
+Data flow: `execve`/`connect` tracepoints -> ring buffer -> Kafka `xdr-telemetry` -> ingestor + AI brain -> ClickHouse (`security_logs.execve_events` / `security_logs.network_events`) and/or `kill_commands` -> Rust responder -> `kill -9`.
 
 ## Repository layout
 
@@ -180,6 +180,24 @@ cargo build --release
 sudo ./target/release/local-responder
 ```
 
+## Phase 2 telemetry
+
+The sensor publishes both event types to `xdr-telemetry`:
+
+- `execve`: PID, UID, executable, and bounded command arguments.
+- `connect`: PID, UID, process name, IPv4 or IPv6 destination, destination port, and protocol.
+
+Network events are stored in `security_logs.network_events`. Destination IPs are checked against
+the Redis IOC sets, but a network-only IOC match is recorded and does not currently issue a kill;
+the existing command IOC kill path is unchanged. IPv4 and IPv6 addresses are normalized to the
+JSON `destination_ip` field.
+
+For an existing ClickHouse volume, apply the migration from the VM2 `xdr-brain/` directory:
+
+```bash
+docker exec -i clickhouse clickhouse-client --password admin < migrations/02-network-events.sql
+```
+
 ## Configuration
 
 Config lives in `.env` files (copied from `.env.example`, both ignored by git):
@@ -197,6 +215,11 @@ Brain-side Python services default to `localhost` for Kafka, Redis and ClickHous
 ## End-to-end check
 
 With the stack, ingestor, AI brain, sensor and responder all running: run any process on VM1 and confirm `sudo ./sensor` logs `[EXEC]`, then confirm `xdr-telemetry` messages appear in kafka-ui and rows land in `execve_events`. A known-threat command produces a kill order that the responder prints and terminates.
+
+To exercise Phase 2 network telemetry, run `curl -4 https://example.com` and `curl -6 https://example.com`
+when IPv6 connectivity is available. Confirm `[CONNECT]` events, `destination_ip`/port fields in Kafka,
+and rows in `security_logs.network_events`. Use a controlled test destination for IOC matching rather than
+an external malicious address.
 
 Threat-intel wiring checks (VM2):
 

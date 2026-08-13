@@ -10,11 +10,15 @@ import (
 
 // Telemetry is the clean, JSON-friendly struct we will send to the Brain
 type Telemetry struct {
-	EventName string `json:"event_name"`
-	PID       uint32 `json:"pid"`
-	UID       uint32 `json:"uid"`
-	Command   string `json:"command"`
-	Timestamp int64  `json:"timestamp"`
+	EventName       string `json:"event_name"`
+	PID             uint32 `json:"pid"`
+	UID             uint32 `json:"uid"`
+	Command         string `json:"command"`
+	Args            string `json:"args,omitempty"`
+	DestinationIP   string `json:"destination_ip,omitempty"`
+	DestinationPort uint16 `json:"destination_port,omitempty"`
+	Protocol        string `json:"protocol,omitempty"`
+	Timestamp       int64  `json:"timestamp"`
 }
 
 // KafkaProducer wraps the Kafka network writer
@@ -28,12 +32,12 @@ func NewKafkaProducer(brokerURL, topic string) *KafkaProducer {
 		Addr:     kafka.TCP(brokerURL),
 		Topic:    topic,
 		Balancer: &kafka.LeastBytes{},
-		
+
 		// CRITICAL FOR SECURITY SENSORS:
-		// Async=true means the sensor fires the packet and immediately goes back 
-		// to listening. It does NOT wait for the network to respond. 
+		// Async=true means the sensor fires the packet and immediately goes back
+		// to listening. It does NOT wait for the network to respond.
 		// This prevents network lag from slowing down the host machine.
-		Async: true, 
+		Async: true,
 	}
 	log.Printf("📡 Kafka Producer initialized, targeting broker: %s", brokerURL)
 	return &KafkaProducer{writer: w}
@@ -50,7 +54,7 @@ func (kp *KafkaProducer) Publish(data Telemetry) {
 
 	// 2. Package it into a Kafka message
 	msg := kafka.Message{
-		Key:   []byte("sys_execve"), // Helps Kafka organize the data
+		Key:   []byte(data.EventName), // Keeps event types distinguishable in Kafka
 		Value: payload,
 	}
 

@@ -46,21 +46,35 @@ def process_message(msg):
         ts_float = enriched_data.get('timestamp', 0) / 1000
         dt_object = datetime.fromtimestamp(ts_float)
 
-        # Insert enriched data
-        client.insert('security_logs.execve_events', [(
-            dt_object, 
-            enriched_data.get('event_name', 'unknown'), 
-            enriched_data.get('pid', 0), 
-            enriched_data.get('uid', 0), 
-            enriched_data.get('command', 'unknown'),
-            # Add new columns to your table schema!
-            enriched_data.get('is_root', False),
-            enriched_data.get('is_suspicious', False),
-            enriched_data.get('is_tmp_execution', False),
-            enriched_data.get('is_known_threat', False)
-        )])
+        if enriched_data.get('event_name') == 'connect':
+            client.insert('security_logs.network_events', [(
+                dt_object,
+                enriched_data.get('event_name', 'connect'),
+                enriched_data.get('pid', 0),
+                enriched_data.get('uid', 0),
+                enriched_data.get('command', 'unknown'),
+                enriched_data.get('destination_ip', ''),
+                enriched_data.get('destination_port', 0),
+                enriched_data.get('protocol', 'tcp'),
+                enriched_data.get('is_root', False),
+                enriched_data.get('is_suspicious', False),
+                enriched_data.get('is_known_threat', False),
+            )])
+        else:
+            client.insert('security_logs.execve_events', [(
+                dt_object,
+                enriched_data.get('event_name', 'unknown'),
+                enriched_data.get('pid', 0),
+                enriched_data.get('uid', 0),
+                enriched_data.get('command', 'unknown'),
+                enriched_data.get('args', ''),
+                enriched_data.get('is_root', False),
+                enriched_data.get('is_suspicious', False),
+                enriched_data.get('is_tmp_execution', False),
+                enriched_data.get('is_known_threat', False)
+            )])
         
-        if enriched_data.get('is_known_threat'):
+        if enriched_data.get('is_known_threat') and enriched_data.get('event_name') != 'connect':
             kill_payload = {
                 "pid": int(enriched_data.get('pid', 0)),
                 "command": enriched_data.get('command', 'unknown'),

@@ -134,6 +134,105 @@ source venv/bin/activate
 python engine/autoencoder.py
 ```
 
+### Retraining the process zero-day detector
+
+The existing zero-day detector is trained from process-execution records in
+`security_logs.execve_events`. Collect representative normal activity on VM1 while the
+sensor, Kafka, and `ingestor.py` are running. Avoid training on deliberate attack tests or
+known IOC matches. Check the available baseline before retraining:
+
+```bash
+sudo docker exec clickhouse clickhouse-client --password admin -q \
+  "SELECT count() FROM security_logs.execve_events"
+```
+
+Run training from the `xdr-brain/` directory:
+
+```bash
+source venv/bin/activate
+python engine/autoencoder.py
+```
+
+This updates the process-model artifacts under `engine/models/` and the feature artifacts
+under `engine/*.pkl`. Restart `engine/ai_interference.py` after retraining so it loads the
+new artifacts. The process detector currently has an automatic response path for events
+that exceed its configured threshold, so review the baseline and threshold before using a
+new model in the live lab.
+
+### Collecting normal network traffic for NIDS training
+
+Phase 2 network telemetry is stored separately in `security_logs.network_events`. The NIDS
+feature contract is implemented in `engine/network_features.py`; the network autoencoder
+training and live scorer are a later stage and are not started by the current pipeline.
+
+First ensure the VM2 ingestor and VM1 sensor are running, then generate normal traffic that
+represents the services normally used by the endpoint:
+
+```bash
+curl -4 https://example.com
+curl -6 https://example.com       # only when IPv6 connectivity is available
+nc -vz 192.168.1.16 9092         # optional local Kafka connectivity
+```
+
+Allow normal background services such as DNS, NTP, package updates, SSH, and Kafka to run.
+Do not include attack replays or known-threat IOC events in the baseline. Check the collected
+network data:
+
+```bash
+sudo docker exec clickhouse clickhouse-client --password admin -q \
+  "SELECT count() FROM security_logs.network_events"
+
+sudo docker exec clickhouse clickhouse-client --password admin -q \
+  "SELECT count(), min(ts), max(ts) FROM security_logs.network_events WHERE is_known_threat = 0"
+
+sudo docker exec clickhouse clickhouse-client --password admin -q \
+  "SELECT command, destination_ip, destination_port, count() \
+   FROM security_logs.network_events \
+   WHERE is_known_threat = 0 \
+   GROUP BY command, destination_ip, destination_port \
+   ORDER BY count() DESC LIMIT 20"
+```
+
+The current feature contract can be validated and its metadata regenerated with:
+
+```bash
+source venv/bin/activate
+python engine/network_features.py
+```
+
+This writes `engine/models/nids_feature_metadata.json`, which records the feature order and
+count. At this point the data is only being collected and the feature contract is being
+validated. Do not expect a network anomaly model or `nids_scorer.py` to run until the later
+NIDS training and live-scoring stages are implemented.
+
+### Training the initial NIDS model
+
+Once `security_logs.network_events` contains representative benign traffic, train the
+network autoencoder from the `xdr-brain/` directory:
+
+```bash
+source venv/bin/activate
+python engine/train_nids.py
+```
+
+The trainer reads only valid, non-IOC network events and creates:
+
+```text
+engine/models/nids_autoencoder.pt
+engine/models/nids_scaler.pkl
+engine/models/nids_feature_metadata.json
+```
+
+The metadata contains the validation reconstruction-loss statistics and an initial P99
+anomaly threshold. Optional controls are available for a repeatable small run:
+
+```bash
+python engine/train_nids.py --limit 500 --epochs 100 --seed 42
+```
+
+This stage trains and saves the model only. The live NIDS scorer and alert topic are not
+implemented yet, and the trained NIDS model does not issue kill commands.
+
 ## VM1 - Target setup (192.168.1.15)
 
 ### 1. Install toolchain

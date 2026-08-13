@@ -52,12 +52,12 @@ def fetch_events(client: Client, limit: int | None) -> list[dict]:
     limit_clause = f" LIMIT {int(limit)}" if limit else ""
     rows = client.execute(
         """
-        SELECT timestamp, pid, uid, command, destination_ip, destination_port, protocol
+        SELECT ts AS timestamp, pid, uid, command, destination_ip, destination_port, protocol
         FROM security_logs.network_events
         WHERE is_known_threat = 0
           AND destination_ip != ''
           AND destination_port BETWEEN 1 AND 65535
-        ORDER BY timestamp
+        ORDER BY ts
         """ + limit_clause
     )
     columns = [

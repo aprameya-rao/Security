@@ -233,6 +233,35 @@ python engine/train_nids.py --limit 500 --epochs 100 --seed 42
 This stage trains and saves the model only. The live NIDS scorer and alert topic are not
 implemented yet, and the trained NIDS model does not issue kill commands.
 
+### Running the live NIDS scorer
+
+After training artifacts exist, apply the NIDS ClickHouse migration on an existing volume:
+
+```bash
+sudo docker exec -i clickhouse clickhouse-client --password admin \
+  < migrations/03-nids.sql
+```
+
+Start the detect-only scorer from `xdr-brain/`:
+
+```bash
+source venv/bin/activate
+python engine/nids_scorer.py
+```
+
+The scorer consumes only `connect` events from `xdr-telemetry`, publishes anomalies to
+`nids-alerts`, and stores them in `security_logs.network_anomalies`. It never publishes to
+`kill_commands` and does not block traffic. The topic initializer creates `nids-alerts` on
+the next stack start; it can also be created manually with the existing topic script.
+
+Verify the output with:
+
+```bash
+sudo docker exec clickhouse clickhouse-client --password admin -q \
+  "SELECT ts, command, destination_ip, destination_port, score, threshold \
+   FROM security_logs.network_anomalies ORDER BY ts DESC LIMIT 10"
+```
+
 ## VM1 - Target setup (192.168.1.15)
 
 ### 1. Install toolchain

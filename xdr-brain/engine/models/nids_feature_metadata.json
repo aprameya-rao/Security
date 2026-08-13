@@ -1,0 +1,29 @@
+{
+  "feature_version": "nids-features-v1",
+  "feature_names": [
+    "uid",
+    "destination_port",
+    "is_tcp",
+    "is_ipv4",
+    "is_ipv6",
+    "is_loopback",
+    "is_private",
+    "is_link_local",
+    "is_global",
+    "is_privileged_port",
+    "destination_prefix_hash",
+    "command_hash",
+    "connections_10s",
+    "connections_60s",
+    "unique_destinations_60s",
+    "unique_ports_60s",
+    "seconds_since_previous",
+    "hour_sin",
+    "hour_cos"
+  ],
+  "feature_count": 19,
+  "hash_buckets": 64,
+  "short_window_seconds": 10.0,
+  "window_seconds": 60.0,
+  "raw_ip_used_for_model": false
+}

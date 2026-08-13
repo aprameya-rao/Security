@@ -45,9 +45,12 @@ for message in consumer:
     except Exception:
         continue 
 
+    if event.get('event_name') != 'execve':
+        continue
+
     uid = event.get('uid', 1000)
     raw_cmd = event.get('command', 'unknown').strip().replace('\x00', '')
-    args_str = 'none' 
+    args_str = event.get('args', 'none').strip().replace('\x00', '') or 'none'
 
     try:
         encoded_cmd = cmd_encoder.transform([raw_cmd])[0]
@@ -70,7 +73,6 @@ for message in consumer:
     uid = event.get('uid', 1000)
     pid = int(event.get('pid', 0)) 
     raw_cmd = event.get('command', 'unknown').strip().replace('\x00', '')
-    args_str = 'none'
 
     if loss > ANOMALY_THRESHOLD:
         print(f"[🚨 ZERO-DAY DETECTED] Score: {loss:.2f} | Killing PID: {pid} | Command: {raw_cmd}")
